@@ -8,6 +8,7 @@ import EventEmitter from "eventemitter3";
 import { Toaster, toast } from "react-hot-toast";
 import { Dropdown, Summary, organizeJobsByLocation } from "./ShiftsModal";
 import styled from "styled-components";
+import { RegistrationChart } from "./components/signupGraph";
 
 export const EventHandler = new EventEmitter();
 
@@ -104,6 +105,12 @@ export default () => {
             Total of {volunteers.length} volunteers, loaded {fromNow} (
             {moment(loadedAt).format("hh:mm:ss a")}).
           </p>
+          <Dropdown>
+            <Summary>Registrations per day</Summary>
+            <Spacer />
+            <RegistrationChart registrations={volunteers} />
+          </Dropdown>
+          <Spacer height="20px" />
           <TextInput
             placeholder="Search"
             style={{ fontSize: "1em" }}
