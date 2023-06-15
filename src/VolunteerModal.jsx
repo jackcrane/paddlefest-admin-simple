@@ -19,25 +19,11 @@ import moment from "moment";
 import ReactDiffViewer from "react-diff-viewer";
 import { getDifferentKeys } from "./lib/object";
 import { EventHandler } from "./App";
+import { ShiftsModal } from "./ShiftsModal";
+import { toast } from "react-hot-toast";
 
-function transformData(data) {
+export function transformData(data) {
   const transformedData = [];
-  /* transformedData = [
-    {
-      job: {
-        name: "Ham radio operator",
-        location: "Morning boat launch",
-        id: "f9fb04d5-82e5-4ffc-9ab7-2525753e4aca",
-      },
-      shifts: [
-        {
-          startTime: "2020-08-06T10:00:00.000Z",
-          endTime: "2020-08-06T17:00:00.000Z",
-        }
-      ]
-    }
-  ]
-  */
 
   data.forEach((item) => {
     const jobId = item.shift.jobId;
@@ -73,6 +59,28 @@ export const VolunteerModal = ({ volunteer, isOpen, onClose }) => {
   useEffect(() => {
     setLocalVolunteer(volunteer);
   }, [volunteer]);
+
+  const getVolunteer = async () => {
+    const f = await fetch(
+      `https://volunteer.jackcrane.rocks/admin/volunteers/${volunteer.id}`
+    );
+    if (!f.ok) {
+      toast.error("Something went wrong. Yell at Jack.");
+      return;
+    }
+    const res = await f.json();
+    setLocalVolunteer(res);
+  };
+
+  useEffect(() => {
+    EventHandler.on("volunteer:updated", getVolunteer);
+    EventHandler.on("shift:updated", getVolunteer);
+    return () => {
+      EventHandler.off("volunteer:updated", getVolunteer);
+      EventHandler.off("shift:updated", getVolunteer);
+    };
+  }, []);
+
   const [working, setWorking] = useState(false);
 
   const save = async (sendEmail) => {
@@ -95,228 +103,211 @@ export const VolunteerModal = ({ volunteer, isOpen, onClose }) => {
     if (f.ok) {
       setLocalVolunteer(res);
       EventHandler.emit("volunteer:updated");
-      alert("Saved!");
+      toast.success("Saved!");
     } else {
-      alert("Something went wrong. Yell at Jack.");
+      toast.error("Something went wrong. Yell at Jack.");
     }
     setWorking(false);
   };
 
-  const update = async () => {
-    setWorking(true);
-    console.log("Updating...");
-    console.log(localVolunteer);
-    const f = await fetch(
-      `https://volunteer.jackcrane.rocks/admin/email-volunteer/`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id: localVolunteer.id,
-        }),
-      }
-    );
-    console.log(f.status);
-    const res = await f.json();
-    console.log(res);
-    if (f.ok) {
-      setLocalVolunteer(res);
-      EventHandler.emit("volunteer:updated");
-      alert("Sent!");
-    } else {
-      alert("Something went wrong. Yell at Jack.");
-    }
-    setWorking(false);
-  };
+  const [shiftsModalOpen, setShiftsModalOpen] = useState(false);
 
   if (!volunteer) return null;
   if (!localVolunteer?.name) return null;
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
-      <Between>
-        <H2>Edit volunteer</H2>
-        <DangerActionButton onClick={onClose}>Close</DangerActionButton>
-      </Between>
-      <Spacer />
-      <Column>
-        <Row>
-          <label>Name</label>
-          <TextInput
-            value={localVolunteer?.name}
-            onInput={(e) => {
-              setLocalVolunteer({ ...localVolunteer, name: e.target.value });
-            }}
-          />
-        </Row>
-        <Row>
-          <label>Email</label>
-          <TextInput
-            value={localVolunteer.email}
-            onInput={(e) => {
-              setLocalVolunteer({ ...localVolunteer, email: e.target.value });
-            }}
-          />
-          <a href="mailto:${localVolunteer.email}">(send email)</a>
-        </Row>
-        <Row>
-          <label>Phone</label>
-          <TextInput
-            value={localVolunteer.phone}
-            onInput={(e) => {
-              setLocalVolunteer({ ...localVolunteer, phone: e.target.value });
-            }}
-          />
-          <a href="tel:${localVolunteer.phone}">(call)</a>
-        </Row>
-        <Row>
-          <label>Shirt size</label>
-          <Select
-            value={localVolunteer.shirtSize}
-            onInput={(e) =>
-              setLocalVolunteer({
-                ...localVolunteer,
-                shirtSize: e.target.value,
-              })
-            }
-          >
-            <option value="XS">XS</option>
-            <option value="S">S</option>
-            <option value="M">M</option>
-            <option value="L">L</option>
-            <option value="XL">XL</option>
-            <option value="XXL">XXL</option>
-          </Select>
-        </Row>
-        <Row>
-          <label>Referral</label>
-          <TextInput
-            value={localVolunteer.referral}
-            onInput={(e) => {
-              setLocalVolunteer({
-                ...localVolunteer,
-                referral: e.target.value,
-              });
-            }}
-          />
-        </Row>
-        <Row>
-          <label>
-            Registration date/time
-            <Popup popup="Registration date/time is set by the server and cannot be edited">
-              [RO]
-            </Popup>
-          </label>
-          <TextInput
-            disabled
-            value={new moment(localVolunteer.createdAt).format(
-              "dddd, MMMM Do YYYY, h:mm:ss a"
-            )}
-          />
-        </Row>
-        <Row>
-          <label>
-            Waiver type
-            <Popup popup="Waiver type can only be edited by the volunteer ([read only])">
-              [RO]
-            </Popup>
-          </label>
-          <TextInput disabled value={localVolunteer.Waiver[0].type} />
-        </Row>
-        <Row>
-          <label>Emergency contact name</label>
-          <TextInput
-            value={localVolunteer.Waiver[0].emergencyContactName}
-            onInput={(e) => {
-              setLocalVolunteer({
-                ...localVolunteer,
-                Waiver: [
-                  {
-                    ...localVolunteer.Waiver[0],
-                    emergencyContactName: e.target.value,
-                  },
-                ],
-              });
-            }}
-          />
-        </Row>
-        <Row>
-          <label>Emergency contact phone</label>
-          <TextInput
-            value={localVolunteer.Waiver[0].emergencyContactPhone}
-            onInput={(e) => {
-              setLocalVolunteer({
-                ...localVolunteer,
-                Waiver: [
-                  {
-                    ...localVolunteer.Waiver[0],
-                    emergencyContactPhone: e.target.value,
-                  },
-                ],
-              });
-            }}
-          />
-        </Row>
-        <Row>
-          <label>Emergency contact email</label>
-          <TextInput
-            value={localVolunteer.Waiver[0].emergencyContactEmail}
-            onInput={(e) => {
-              setLocalVolunteer({
-                ...localVolunteer,
-                Waiver: [
-                  {
-                    ...localVolunteer.Waiver[0],
-                    emergencyContactEmail: e.target.value,
-                  },
-                ],
-              });
-            }}
-          />
-        </Row>
-        <Hr />
-        <H3>
-          Shifts
-          <Popup popup="Shifts are not currently editable">[RO]</Popup>
-        </H3>
-        {transformData(volunteer.shifts).map((job) => (
-          <>
-            <u>
-              {job.jobName} ({job.jobLocation})
-            </u>
-            <Row>
-              {job.shifts.map((shift) => (
-                <ShiftPill>
-                  {new moment(shift.startTime).format("h:mm a")} -{" "}
-                  {new moment(shift.endTime).format("h:mm a")}
-                </ShiftPill>
-              ))}
-            </Row>
-          </>
-        ))}
-        <Hr />
-        <H3>Save Changes</H3>
-        {!working ? (
-          <>
-            <ActionButton onClick={() => save(false)}>
-              Silently save changes
+    <>
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <Between>
+          <H2>Edit volunteer</H2>
+          <DangerActionButton onClick={onClose}>Close</DangerActionButton>
+        </Between>
+        <Spacer />
+        <Column>
+          <Row>
+            <label>Name</label>
+            <TextInput
+              value={localVolunteer?.name}
+              onInput={(e) => {
+                setLocalVolunteer({ ...localVolunteer, name: e.target.value });
+              }}
+            />
+          </Row>
+          <Row>
+            <label>Email</label>
+            <TextInput
+              value={localVolunteer.email}
+              onInput={(e) => {
+                setLocalVolunteer({ ...localVolunteer, email: e.target.value });
+              }}
+            />
+            <a href="mailto:${localVolunteer.email}">(send email)</a>
+          </Row>
+          <Row>
+            <label>Phone</label>
+            <TextInput
+              value={localVolunteer.phone}
+              onInput={(e) => {
+                setLocalVolunteer({ ...localVolunteer, phone: e.target.value });
+              }}
+            />
+            <a href="tel:${localVolunteer.phone}">(call)</a>
+          </Row>
+          <Row>
+            <label>Shirt size</label>
+            <Select
+              value={localVolunteer.shirtSize}
+              onInput={(e) =>
+                setLocalVolunteer({
+                  ...localVolunteer,
+                  shirtSize: e.target.value,
+                })
+              }
+            >
+              <option value="XS">XS</option>
+              <option value="S">S</option>
+              <option value="M">M</option>
+              <option value="L">L</option>
+              <option value="XL">XL</option>
+              <option value="XXL">XXL</option>
+            </Select>
+          </Row>
+          <Row>
+            <label>Referral</label>
+            <TextInput
+              value={localVolunteer.referral}
+              onInput={(e) => {
+                setLocalVolunteer({
+                  ...localVolunteer,
+                  referral: e.target.value,
+                });
+              }}
+            />
+          </Row>
+          <Row>
+            <label>
+              Registration date/time
+              <Popup popup="Registration date/time is set by the server and cannot be edited">
+                [RO]
+              </Popup>
+            </label>
+            <TextInput
+              disabled
+              value={new moment(localVolunteer.createdAt).format(
+                "dddd, MMMM Do YYYY, h:mm:ss a"
+              )}
+            />
+          </Row>
+          <Row>
+            <label>
+              Waiver type
+              <Popup popup="Waiver type can only be edited by the volunteer ([read only])">
+                [RO]
+              </Popup>
+            </label>
+            <TextInput disabled value={localVolunteer.Waiver[0].type} />
+          </Row>
+          <Row>
+            <label>Emergency contact name</label>
+            <TextInput
+              value={localVolunteer.Waiver[0].emergencyContactName}
+              onInput={(e) => {
+                setLocalVolunteer({
+                  ...localVolunteer,
+                  Waiver: [
+                    {
+                      ...localVolunteer.Waiver[0],
+                      emergencyContactName: e.target.value,
+                    },
+                  ],
+                });
+              }}
+            />
+          </Row>
+          <Row>
+            <label>Emergency contact phone</label>
+            <TextInput
+              value={localVolunteer.Waiver[0].emergencyContactPhone}
+              onInput={(e) => {
+                setLocalVolunteer({
+                  ...localVolunteer,
+                  Waiver: [
+                    {
+                      ...localVolunteer.Waiver[0],
+                      emergencyContactPhone: e.target.value,
+                    },
+                  ],
+                });
+              }}
+            />
+          </Row>
+          <Row>
+            <label>Emergency contact email</label>
+            <TextInput
+              value={localVolunteer.Waiver[0].emergencyContactEmail}
+              onInput={(e) => {
+                setLocalVolunteer({
+                  ...localVolunteer,
+                  Waiver: [
+                    {
+                      ...localVolunteer.Waiver[0],
+                      emergencyContactEmail: e.target.value,
+                    },
+                  ],
+                });
+              }}
+            />
+          </Row>
+          <Hr />
+          <Row>
+            <H3>Shifts</H3>
+            <ActionButton onClick={() => setShiftsModalOpen(true)}>
+              Edit shifts
             </ActionButton>
-            <ActionButton onClick={() => save(true)}>
-              Save changes and email volunteer
-            </ActionButton>
-          </>
-        ) : (
-          <>
-            <p>Working...</p>
-          </>
-        )}
-      </Column>
+          </Row>
+          {transformData(volunteer.shifts).map((job) => (
+            <>
+              <u>
+                {job.jobName} ({job.jobLocation})
+              </u>
+              <Row>
+                {job.shifts.map((shift) => (
+                  <ShiftPill>
+                    {new moment(shift.startTime).format("h:mm a")} -{" "}
+                    {new moment(shift.endTime).format("h:mm a")}
+                  </ShiftPill>
+                ))}
+              </Row>
+            </>
+          ))}
+          <Hr />
+          <H3>Save Changes</H3>
+          {!working ? (
+            <>
+              <ActionButton onClick={() => save(false)}>
+                Silently save changes
+              </ActionButton>
+              <ActionButton onClick={() => save(true)}>
+                Save changes and email volunteer
+              </ActionButton>
+            </>
+          ) : (
+            <>
+              <p>Working...</p>
+            </>
+          )}
+        </Column>
 
-      {/* <code>
+        {/* <code>
         <pre>{JSON.stringify(volunteer, null, 2)}</pre>
       </code> */}
-    </Modal>
+      </Modal>
+      <ShiftsModal
+        shifts={volunteer.shifts}
+        volunteer={volunteer}
+        isOpen={shiftsModalOpen}
+        onClose={() => setShiftsModalOpen(false)}
+      />
+    </>
   );
 };
 
