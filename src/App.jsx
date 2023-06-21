@@ -207,7 +207,9 @@ export default () => {
                                     <a
                                       href={`mailto:${volunteer.volunteer.email}`}
                                     >
-                                      {volunteer.volunteer.name}
+                                      {volunteer.volunteer.name} [
+                                      {volunteer.volunteer.email} /{" "}
+                                      {volunteer.volunteer.phone}]
                                     </a>
                                   </P>
                                 ))}
