@@ -86,6 +86,12 @@ export default () => {
     });
   };
 
+  const isDuplicate = (name) => {
+    // see if there is more than one volunteer with the same name
+    const names = volunteers.map((v) => v.name);
+    return names.filter((n) => n === name).length > 1;
+  };
+
   const [tab, setTab] = useState("volunteer");
 
   if (volunteers === null || jobs === null) {
@@ -126,7 +132,20 @@ export default () => {
                 <th>Shirt size</th>
               </tr>
               {filter(volunteers).map((volunteer) => (
-                <tr onClick={() => setSelectedVolunteer(volunteer)}>
+                <tr
+                  onClick={() => setSelectedVolunteer(volunteer)}
+                  key={volunteer.id}
+                  style={
+                    isDuplicate(volunteer.name)
+                      ? {
+                          backgroundColor: "rgba(255,0,0,0.05)",
+                          outlineColor: "red",
+                          outlineWidth: "2px",
+                          outlineStyle: "solid",
+                        }
+                      : {}
+                  }
+                >
                   <td>{volunteer.name}</td>
                   <td>
                     <a href={`tel:${volunteer.phone}`}>{volunteer.phone}</a>
