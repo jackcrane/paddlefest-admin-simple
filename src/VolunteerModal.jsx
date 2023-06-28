@@ -220,12 +220,18 @@ export const VolunteerModal = ({ volunteer, isOpen, onClose }) => {
                 [RO]
               </Popup>
             </label>
-            <TextInput disabled value={localVolunteer.Waiver[0].type} />
+            <TextInput
+              disabled
+              value={localVolunteer.Waiver[0]?.type || "NOT SIGNED!"}
+            />
           </Row>
           <Row>
             <label>Emergency contact name</label>
             <TextInput
-              value={localVolunteer.Waiver[0].emergencyContactName}
+              value={
+                localVolunteer.Waiver[0]?.emergencyContactName ||
+                "WAIVER NOT SIGNED"
+              }
               onInput={(e) => {
                 setLocalVolunteer({
                   ...localVolunteer,
@@ -242,7 +248,10 @@ export const VolunteerModal = ({ volunteer, isOpen, onClose }) => {
           <Row>
             <label>Emergency contact phone</label>
             <TextInput
-              value={localVolunteer.Waiver[0].emergencyContactPhone}
+              value={
+                localVolunteer.Waiver[0]?.emergencyContactPhone ||
+                "WAIVER NOT SIGNED"
+              }
               onInput={(e) => {
                 setLocalVolunteer({
                   ...localVolunteer,
@@ -259,7 +268,10 @@ export const VolunteerModal = ({ volunteer, isOpen, onClose }) => {
           <Row>
             <label>Emergency contact email</label>
             <TextInput
-              value={localVolunteer.Waiver[0].emergencyContactEmail}
+              value={
+                localVolunteer.Waiver[0]?.emergencyContactEmail ||
+                "WAIVER NOT SIGNED"
+              }
               onInput={(e) => {
                 setLocalVolunteer({
                   ...localVolunteer,
