@@ -110,6 +110,22 @@ export const VolunteerModal = ({ volunteer, isOpen, onClose }) => {
     setWorking(false);
   };
 
+  const deleteVolunteer = async () => {
+    const f = await fetch(
+      `https://volunteer.jackcrane.rocks/admin/volunteers/${localVolunteer.id}`,
+      {
+        method: "DELETE",
+      }
+    );
+    if (f.ok) {
+      toast.success("Deleted!");
+      onClose();
+      EventHandler.emit("volunteer:updated");
+    } else {
+      toast.error("Something went wrong. Yell at Jack.");
+    }
+  };
+
   const [shiftsModalOpen, setShiftsModalOpen] = useState(false);
 
   if (!volunteer) return null;
@@ -256,6 +272,18 @@ export const VolunteerModal = ({ volunteer, isOpen, onClose }) => {
                 });
               }}
             />
+          </Row>
+          <Row>
+            <label>Delete Volunteer</label>
+            <DangerActionButton
+              onClick={() => {
+                if (prompt('Are you sure? Type "yes" to confirm') === "yes") {
+                  deleteVolunteer();
+                }
+              }}
+            >
+              Delete volunteer
+            </DangerActionButton>
           </Row>
           <Hr />
           <Row>

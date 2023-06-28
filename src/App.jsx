@@ -79,9 +79,9 @@ export default () => {
     }
     return volunteers.filter((volunteer) => {
       return (
-        volunteer.name.includes(query) ||
-        volunteer.email.includes(query) ||
-        volunteer.phone.includes(query)
+        volunteer.name.toLowerCase().includes(query.toLowerCase()) ||
+        volunteer.email.toLowerCase().includes(query.toLowerCase()) ||
+        volunteer.phone.toLowerCase().includes(query.toLowerCase())
       );
     });
   };
