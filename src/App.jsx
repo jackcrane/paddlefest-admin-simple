@@ -116,6 +116,12 @@ export default () => {
             <Spacer />
             <RegistrationChart registrations={volunteers} />
           </Dropdown>
+          <Spacer />
+          <Dropdown>
+            <Summary>All emails</Summary>
+            <Spacer />
+            <p>{volunteers.map((v) => v.email).join(", ")}</p>
+          </Dropdown>
           <Spacer height="20px" />
           <TextInput
             placeholder="Search"
