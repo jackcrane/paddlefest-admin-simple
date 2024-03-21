@@ -1,6 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { Modal } from "./components/modal";
-import { ActionButton, Column, H2, H3, Row, Spacer, TextInput } from "./kit";
+import {
+  ActionButton,
+  Column,
+  DangerActionButton,
+  H2,
+  H3,
+  Row,
+  Spacer,
+  TextInput,
+} from "./kit";
 import { VolunteerModal } from "./VolunteerModal";
 import useFromNow from "./lib/useFromNow";
 import moment from "moment";
@@ -9,6 +18,7 @@ import { Toaster, toast } from "react-hot-toast";
 import { Dropdown, Summary, organizeJobsByLocation } from "./ShiftsModal";
 import styled from "styled-components";
 import { RegistrationChart } from "./components/signupGraph";
+import { EditJobModal } from "./EditJobModal";
 
 export const EventHandler = new EventEmitter();
 
@@ -35,6 +45,9 @@ const ProgressBar = ({ pct }) => (
   </ProgressBarContainer>
 );
 
+const ENDPOINT = "https://volunteer.jackcrane.rocks";
+// const ENDPOINT = "http://localhost:3100";
+
 export default () => {
   const [volunteers, setVolunteers] = useState(null);
   const [jobs, setJobs] = useState(null);
@@ -43,7 +56,7 @@ export default () => {
   const fromNow = useFromNow(loadedAt);
 
   const getVolunteers = () => {
-    fetch("https://volunteer.jackcrane.rocks/admin/volunteers")
+    fetch(`${ENDPOINT}/admin/volunteers`)
       .then((res) => res.json())
       .then((volunteers) => setVolunteers(volunteers))
       .catch((err) =>
@@ -53,7 +66,7 @@ export default () => {
   };
 
   const getJobs = () => {
-    fetch("https://volunteer.jackcrane.rocks/admin/jobs")
+    fetch(`${ENDPOINT}/admin/jobs`)
       .then((res) => res.json())
       .then((jobs) => setJobs(jobs))
       .catch((err) =>
@@ -68,9 +81,11 @@ export default () => {
     EventHandler.on("volunteer:updated", getJobs);
     EventHandler.on("shift:updated", getVolunteers);
     EventHandler.on("shift:updated", getJobs);
+    EventHandler.on("job:updated", getJobs);
   }, []);
 
   const [selectedVolunteer, setSelectedVolunteer] = useState(null);
+  const [selectedJob, setSelectedJob] = useState(null);
 
   const [query, setQuery] = useState("");
   const filter = (volunteers) => {
@@ -174,19 +189,52 @@ export default () => {
             </ActionButton>
           </Row>
           <p>Total of {jobs.length} jobs</p>
+          <Spacer />
+          <ActionButton onClick={() => setSelectedJob({ shifts: [] })}>
+            Create new job
+          </ActionButton>
           <Spacer height="20px" />
           <Column>
             {organizeJobsByLocation(jobs).map((location) => (
-              <>
+              <div key={location.id}>
                 <Spacer />
                 <H2>{location.name}</H2>
                 <Column>
                   {location.jobs.map((job) => (
-                    <>
+                    <div key={job.id}>
                       <Spacer />
-                      <Row>
+                      <Row style={{ marginBottom: 5 }}>
                         <H3>{job.name}</H3>
                         <P>{location.name}</P>
+                        <ActionButton onClick={() => setSelectedJob(job)}>
+                          Modify
+                        </ActionButton>
+                        <DangerActionButton
+                          onClick={() => {
+                            if (
+                              !confirm(
+                                "Are you sure you want to delete this job?"
+                              )
+                            )
+                              return;
+                            fetch(`${ENDPOINT}/admin/jobs/${job.id}`, {
+                              method: "DELETE",
+                            })
+                              .then((r) => {
+                                if (r.status !== 200)
+                                  throw new Error("Failed to delete job");
+                                toast.success("Job deleted");
+                                getJobs();
+                              })
+                              .catch(() => {
+                                toast.error(
+                                  "Something went wrong deleting the job"
+                                );
+                              });
+                          }}
+                        >
+                          Delete
+                        </DangerActionButton>
                       </Row>
                       <table>
                         <tr>
@@ -196,7 +244,7 @@ export default () => {
                           <th>Volunteers</th>
                         </tr>
                         {job.shifts.map((shift) => (
-                          <tr style={{ cursor: "initial" }}>
+                          <tr style={{ cursor: "initial" }} key={shift.id}>
                             <td>
                               {new moment(shift.startTime).format("h:mm a")}
                             </td>
@@ -243,10 +291,10 @@ export default () => {
                           </tr>
                         ))}
                       </table>
-                    </>
+                    </div>
                   ))}
                 </Column>
-              </>
+              </div>
             ))}
           </Column>
         </>
@@ -255,6 +303,12 @@ export default () => {
         volunteer={selectedVolunteer}
         onClose={() => setSelectedVolunteer(null)}
         isOpen={selectedVolunteer !== null}
+      />
+      <EditJobModal
+        job={selectedJob}
+        onClose={() => setSelectedJob(null)}
+        isOpen={selectedJob !== null}
+        requestRefetch={getJobs}
       />
       <Spacer height="50px" />
     </>

@@ -56,6 +56,11 @@ export const DangerActionButton = styled(ActionButton)`
   }
 `;
 
+export const MicroDangerActionButton = styled(DangerActionButton)`
+  padding: 2px 5px;
+  font-size: 0.8em;
+`;
+
 export const TextInput = styled.input`
   border: 1px solid #ccc;
   border-radius: 4px;
