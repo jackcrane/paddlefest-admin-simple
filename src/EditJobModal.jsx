@@ -16,7 +16,7 @@ import {
   Spacer,
   TextInput,
 } from "./kit";
-import moment from "moment";
+import moment from "moment-timezone";
 import { HSLA } from "./lib/color";
 import { EventHandler } from "./App";
 import { transformData } from "./VolunteerModal";
@@ -31,15 +31,16 @@ export const Dropdown = styled.details`
   font-size: 1em;
 `;
 
+moment.tz.setDefault("GMT");
+
 function findNextShift(shifts) {
   if (!shifts || shifts.length === 0) return [new Date(), new Date()];
   shifts.sort((a, b) => new Date(a.endTime) - new Date(b.endTime));
 
   const lastShift = shifts[shifts.length - 1];
-
   const duration = new Date(lastShift.endTime) - new Date(lastShift.startTime);
 
-  const nextStartTime = new Date(new Date(lastShift.endTime).getTime());
+  const nextStartTime = new Date(lastShift.endTime);
   const nextEndTime = new Date(nextStartTime.getTime() + duration);
 
   return [nextStartTime.toISOString(), nextEndTime.toISOString()];
@@ -50,10 +51,7 @@ export const EditJobModal = ({ isOpen, onClose, job, requestRefetch }) => {
   const [locations, setLocations] = useState([]);
 
   useEffect(() => {
-    // job.shifts is an array of objects, including a startTime which is a datetime string. Sort the array of shifts by startTime
-    job?.shifts?.sort((a, b) => {
-      return new Date(a.startTime) - new Date(b.startTime);
-    });
+    job?.shifts?.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
     setLocalJob(job);
   }, [job]);
 
@@ -168,12 +166,12 @@ export const EditJobModal = ({ isOpen, onClose, job, requestRefetch }) => {
                 ...localJob.shifts,
                 {
                   id: uuidv4(),
-                  startTime: moment(findNextShift(job?.shifts)[0]).format(
-                    "YYYY-MM-DD HH:mm:ss"
-                  ),
-                  endTime: moment(findNextShift(job?.shifts)[1]).format(
-                    "YYYY-MM-DD HH:mm:ss"
-                  ),
+                  startTime: moment(findNextShift(job?.shifts)[0])
+                    .tz("Europe/London")
+                    .format("YYYY-MM-DD HH:mm:ss"),
+                  endTime: moment(findNextShift(job?.shifts)[1])
+                    .tz("Europe/London")
+                    .format("YYYY-MM-DD HH:mm:ss"),
                   capacity: 1,
                 },
               ],

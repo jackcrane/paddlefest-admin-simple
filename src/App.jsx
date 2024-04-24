@@ -21,6 +21,7 @@ import { RegistrationChart } from "./components/signupGraph";
 import { EditJobModal } from "./EditJobModal";
 
 export const EventHandler = new EventEmitter();
+moment.tz.setDefault("GMT");
 
 const P = styled.p`
   margin: 0;
@@ -123,8 +124,7 @@ export default () => {
             <ActionButton onClick={() => setTab("shift")}>Jobs</ActionButton>
           </Row>
           <p>
-            Total of {volunteers.length} volunteers, loaded {fromNow} (
-            {moment(loadedAt).format("hh:mm:ss a")}).
+            Total of {volunteers.length} volunteers, loaded {fromNow}.
           </p>
           <Dropdown>
             <Summary>Registrations per day</Summary>
@@ -246,10 +246,14 @@ export default () => {
                         {job.shifts.map((shift) => (
                           <tr style={{ cursor: "initial" }} key={shift.id}>
                             <td>
-                              {new moment(shift.startTime).format("h:mm a")}
+                              {new moment(shift.startTime)
+                                .tz("Europe/London")
+                                .format("h:mm a")}
                             </td>
                             <td>
-                              {new moment(shift.endTime).format("h:mm a")}
+                              {new moment(shift.endTime)
+                                .tz("Europe/London")
+                                .format("h:mm a")}
                             </td>
                             <td>
                               <Row>
