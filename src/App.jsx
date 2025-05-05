@@ -248,11 +248,13 @@ export default () => {
                             <td>
                               {new moment(shift.startTime)
                                 .tz("Europe/London")
+                                .subtract(1, "hour")
                                 .format("h:mm a")}
                             </td>
                             <td>
                               {new moment(shift.endTime)
                                 .tz("Europe/London")
+                                .subtract(1, "hour")
                                 .format("h:mm a")}
                             </td>
                             <td>
